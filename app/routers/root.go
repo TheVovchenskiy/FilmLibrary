@@ -3,6 +3,7 @@ package routers
 import (
 	"filmLibrary/app"
 	"filmLibrary/configs"
+	"filmLibrary/internal/repository"
 	"fmt"
 	"net/http"
 
@@ -16,9 +17,11 @@ func Run() (err error) {
 	}
 	defer db.Close()
 
+	movieStorage := repository.NewMoviesPg(db)
+
 	rootRouter := http.NewServeMux()
 
-	// MountMovieRouter(rootRouter, )
+	MountMovieRouter(rootRouter, movieStorage)
 
 	fmt.Printf("\tstarting server at %d\n", configs.PORT)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", configs.PORT), rootRouter)

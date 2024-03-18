@@ -4,12 +4,12 @@ CREATE TABLE IF NOT EXISTS public.movie (
         length("name") > 0
         AND length("name") <= 150
     ),
-    description TEXT DEFAULT '' CONSTRAINT valid_description CHECK (
+    description TEXT NOT NULL DEFAULT '' CONSTRAINT valid_description CHECK (
         length(description) >= 0
         AND length(description) <= 1000
     ),
     release_date DATE NOT NULL,
-    rating INT NOT NULL CONSTRAINT valid_rating CHECK (
+    rating REAL NOT NULL CONSTRAINT valid_rating CHECK (
         rating >= 0
         AND rating <= 10
     ),
@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS public.movie_star_assign (
 );
 
 ---- create above / drop below ----
+DROP TABLE IF EXISTS public.movie_star_assign;
+
 DROP TABLE IF EXISTS public.movie;
 
 DROP TABLE IF EXISTS public.star;
-
-DROP TABLE IF EXISTS public.movie_star_assign;

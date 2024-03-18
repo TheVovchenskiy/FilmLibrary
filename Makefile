@@ -17,3 +17,7 @@ install-dotenv:
 .PHONY: migrate
 migrate:
 	dotenv -- tern migrate -m migrations/
+
+.PHONY: rollback
+rollback:
+	dotenv -- tern migrate -m migrations/ -d -1

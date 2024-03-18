@@ -1,9 +1,13 @@
 package serverErrors
 
-import "net/http"
+import (
+	"filmLibrary/pkg/sortOptions"
+	"net/http"
+)
 
 var HTTPErrors = map[error]int{
-	ErrMethodNotAllowed: http.StatusMethodNotAllowed,
+	ErrMethodNotAllowed:              http.StatusMethodNotAllowed,
+	sortOptions.ErrInvalidQueryParam: http.StatusBadRequest,
 }
 
 func MapHTTPError(err error) (msg string, status int) {
