@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"context"
 	"encoding/json"
 	"filmLibrary/model"
 	"filmLibrary/pkg/responseTemplate"
