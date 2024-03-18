@@ -2,6 +2,10 @@
 run:
 	go run cmd/filmLibrary/main.go
 
+.PHONY: build
+build:
+	go build -o ./bin/app ./cmd/filmLibrary/main.go
+
 .PHONY: compose-up
 compose-up:
 	docker compose up -d
