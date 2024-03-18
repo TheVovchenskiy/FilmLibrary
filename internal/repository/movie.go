@@ -8,6 +8,8 @@ import (
 	"filmLibrary/pkg/utils"
 	"fmt"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 type MoviesPg struct {
@@ -40,6 +42,11 @@ func (repo *MoviesPg) validateField(field string) bool {
 }
 
 func (repo *MoviesPg) GetMovies(ctx context.Context, queryOptions map[sortOptions.SortOptionName]sortOptions.SortOptionValue) ([]model.DBMovie, error) {
+	contextLogger := utils.GetContextLogger(ctx)
+	contextLogger.WithFields(logrus.Fields{
+		"query_options": queryOptions,
+	}).
+		Info("going to postgres")
 	query := fmt.Sprintf(`SELECT
 							id,
 							"name",
@@ -55,6 +62,10 @@ func (repo *MoviesPg) GetMovies(ctx context.Context, queryOptions map[sortOption
 	)
 	rows, err := repo.db.Query(query)
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error while doing query in postgres")
 		return nil, err
 	}
 	defer rows.Close()
@@ -71,6 +82,10 @@ func (repo *MoviesPg) GetMovies(ctx context.Context, queryOptions map[sortOption
 			&movie.Rating,
 		)
 		if err != nil {
+			contextLogger.WithFields(logrus.Fields{
+				"err_msg": err,
+			}).
+				Error("error while doing scanning rows in postgres")
 			return nil, err
 		}
 		moviesToReturn = append(moviesToReturn, movie)
@@ -80,6 +95,11 @@ func (repo *MoviesPg) GetMovies(ctx context.Context, queryOptions map[sortOption
 }
 
 func (repo *MoviesPg) AddMovie(ctx context.Context, dbMovie model.DBMovie) (int, error) {
+	contextLogger := utils.GetContextLogger(ctx)
+	contextLogger.WithFields(logrus.Fields{
+		"db_movie": dbMovie,
+	}).
+		Info("going to postgres")
 	query := `INSERT
 				INTO
 				public.movie (
@@ -102,10 +122,20 @@ func (repo *MoviesPg) AddMovie(ctx context.Context, dbMovie model.DBMovie) (int,
 	).Scan(&insertedMovieId)
 
 	if err == sql.ErrNoRows {
-		return 0, ErrNotInserted
+		if err != nil {
+			contextLogger.WithFields(logrus.Fields{
+				"err_msg": err,
+			}).
+				Error("error while doing QueryRow in postgres")
+			return 0, ErrNotInserted
+		}
 	}
 
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error while inserting")
 		return 0, err
 	}
 
@@ -113,13 +143,25 @@ func (repo *MoviesPg) AddMovie(ctx context.Context, dbMovie model.DBMovie) (int,
 }
 
 func (repo *MoviesPg) UpdateMovie(ctx context.Context, movieId int, updateData map[string]interface{}) error {
+	contextLogger := utils.GetContextLogger(ctx)
 	setParts := []string{}
 	args := []interface{}{}
 	argId := 1
 
+	contextLogger.WithFields(logrus.Fields{
+		"movie_id":    movieId,
+		"update_data": updateData,
+	}).
+		Info("going to postgres")
+
 	for key, val := range updateData {
 		key = repo.mapField(key)
 		if !repo.validateField(key) {
+			contextLogger.WithFields(logrus.Fields{
+				"key": key,
+				"val": val,
+			}).
+				Error("error while validating fields in postgres")
 			return ErrInvalidFieldName
 		}
 		setParts = append(setParts, fmt.Sprintf("%s = $%d", key, argId))
@@ -144,14 +186,26 @@ func (repo *MoviesPg) UpdateMovie(ctx context.Context, movieId int, updateData m
 		args...,
 	)
 	if err == sql.ErrNoRows {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error while updating movie in postgres")
 		return ErrNoRowsUpdated
 	}
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error while inserting")
 		return err
 	}
 
 	_, err = result.RowsAffected()
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error of affected rows")
 		return err
 	}
 
@@ -159,6 +213,12 @@ func (repo *MoviesPg) UpdateMovie(ctx context.Context, movieId int, updateData m
 }
 
 func (repo *MoviesPg) DeleteMovie(ctx context.Context, movieId int) error {
+	contextLogger := utils.GetContextLogger(ctx)
+	contextLogger.WithFields(logrus.Fields{
+		"movie_id": movieId,
+	}).
+		Info("going to postgres")
+
 	query := `DELETE
 			FROM
 				public.movie m
@@ -168,14 +228,26 @@ func (repo *MoviesPg) DeleteMovie(ctx context.Context, movieId int) error {
 	result, err := repo.db.Exec(query, movieId)
 
 	if err == sql.ErrNoRows {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error while deleting data")
 		return ErrNoRowsDeleted
 	}
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error while deleting data")
 		return err
 	}
 
 	_, err = result.RowsAffected()
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error of affected rows")
 		return err
 	}
 
@@ -183,6 +255,12 @@ func (repo *MoviesPg) DeleteMovie(ctx context.Context, movieId int) error {
 }
 
 func (repo *MoviesPg) SearchMovie(ctx context.Context, searchQuery string) ([]model.DBMovie, error) {
+	contextLogger := utils.GetContextLogger(ctx)
+	contextLogger.WithFields(logrus.Fields{
+		"search_query": searchQuery,
+	}).
+		Info("going to postgres")
+
 	likeSearchQuery := "%" + searchQuery + "%"
 	query := `SELECT
 				m.id,
@@ -204,6 +282,10 @@ func (repo *MoviesPg) SearchMovie(ctx context.Context, searchQuery string) ([]mo
 
 	rows, err := repo.db.Query(query, likeSearchQuery, likeSearchQuery)
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error while starting query on rows")
 		return nil, err
 	}
 	defer rows.Close()
@@ -220,6 +302,10 @@ func (repo *MoviesPg) SearchMovie(ctx context.Context, searchQuery string) ([]mo
 			&movie.Rating,
 		)
 		if err != nil {
+			contextLogger.WithFields(logrus.Fields{
+				"err_msg": err,
+			}).
+				Error("error while scanning row")
 			return nil, err
 		}
 		moviesToReturn = append(moviesToReturn, movie)

@@ -6,6 +6,10 @@ import (
 	"net/http"
 )
 
+type ErrToSend struct {
+	Message string
+}
+
 func MarshalAndSend(w http.ResponseWriter, data any) {
 	js, err := json.Marshal(data)
 	if err != nil {
@@ -18,7 +22,7 @@ func MarshalAndSend(w http.ResponseWriter, data any) {
 }
 
 func MarshalResponseError(errMsg string) []byte {
-	data, _ := json.Marshal(map[string]string{"message": errMsg})
+	data, _ := json.Marshal(ErrToSend{Message: errMsg})
 	return data
 }
 

@@ -7,6 +7,8 @@ import (
 	"filmLibrary/pkg/utils"
 	"fmt"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 type StarsPg struct {
@@ -38,6 +40,8 @@ func (repo *StarsPg) validateField(field string) bool {
 }
 
 func (repo *StarsPg) GetAllStars(ctx context.Context) ([]model.APIStar, error) {
+	contextLogger := utils.GetContextLogger(ctx)
+	contextLogger.Info("going to postgres")
 	query := `SELECT
 				s.id,
 				s."name",
@@ -54,6 +58,10 @@ func (repo *StarsPg) GetAllStars(ctx context.Context) ([]model.APIStar, error) {
 				msa.movie_id = m.id`
 	rows, err := repo.db.Query(query)
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error while starting query on rows")
 		return nil, err
 	}
 	defer rows.Close()
@@ -70,6 +78,10 @@ func (repo *StarsPg) GetAllStars(ctx context.Context) ([]model.APIStar, error) {
 			&movie,
 		)
 		if err != nil {
+			contextLogger.WithFields(logrus.Fields{
+				"err_msg": err,
+			}).
+				Error("error while scanning rows")
 			return nil, err
 		}
 
@@ -82,6 +94,10 @@ func (repo *StarsPg) GetAllStars(ctx context.Context) ([]model.APIStar, error) {
 	}
 
 	if err = rows.Err(); err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("rows error")
 		return nil, err
 	}
 
@@ -94,6 +110,12 @@ func (repo *StarsPg) GetAllStars(ctx context.Context) ([]model.APIStar, error) {
 }
 
 func (repo *StarsPg) AddStarWithMovies(ctx context.Context, star model.DBStar) (int, error) {
+	contextLogger := utils.GetContextLogger(ctx)
+	contextLogger.WithFields(logrus.Fields{
+		"star": star,
+	}).
+		Info("going to postgres")
+
 	query := `INSERT
 				INTO
 				public.star (
@@ -114,10 +136,18 @@ func (repo *StarsPg) AddStarWithMovies(ctx context.Context, star model.DBStar) (
 	).Scan(&insertedStarId)
 
 	if err == sql.ErrNoRows {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("no rows error")
 		return 0, ErrNotInserted
 	}
 
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error parsing row")
 		return 0, err
 	}
 
@@ -125,6 +155,13 @@ func (repo *StarsPg) AddStarWithMovies(ctx context.Context, star model.DBStar) (
 }
 
 func (repo *StarsPg) UpdateStar(ctx context.Context, starId int, updateData map[string]interface{}) error {
+	contextLogger := utils.GetContextLogger(ctx)
+	contextLogger.WithFields(logrus.Fields{
+		"star_id":     starId,
+		"update_data": updateData,
+	}).
+		Info("going to postgres")
+
 	setParts := []string{}
 	args := []interface{}{}
 	argId := 1
@@ -132,6 +169,11 @@ func (repo *StarsPg) UpdateStar(ctx context.Context, starId int, updateData map[
 	for key, val := range updateData {
 		key = repo.mapField(key)
 		if !repo.validateField(key) {
+			contextLogger.WithFields(logrus.Fields{
+				"key": key,
+				"val": val,
+			}).
+				Error("error while validating fields in postgres")
 			return ErrInvalidFieldName
 		}
 		setParts = append(setParts, fmt.Sprintf("%s = $%d", key, argId))
@@ -156,14 +198,26 @@ func (repo *StarsPg) UpdateStar(ctx context.Context, starId int, updateData map[
 		args...,
 	)
 	if err == sql.ErrNoRows {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error no rows")
 		return ErrNoRowsUpdated
 	}
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error parsing row")
 		return err
 	}
 
 	_, err = result.RowsAffected()
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error affected rows")
 		return err
 	}
 
@@ -171,6 +225,12 @@ func (repo *StarsPg) UpdateStar(ctx context.Context, starId int, updateData map[
 }
 
 func (repo *StarsPg) DeleteStar(ctx context.Context, starId int) error {
+	contextLogger := utils.GetContextLogger(ctx)
+	contextLogger.WithFields(logrus.Fields{
+		"star_id": starId,
+	}).
+		Info("going to postgres")
+
 	query := `DELETE
 			FROM
 				public.star m
@@ -180,14 +240,26 @@ func (repo *StarsPg) DeleteStar(ctx context.Context, starId int) error {
 	result, err := repo.db.Exec(query, starId)
 
 	if err == sql.ErrNoRows {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error no rows")
 		return ErrNoRowsDeleted
 	}
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error parsing row")
 		return err
 	}
 
 	_, err = result.RowsAffected()
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg": err,
+		}).
+			Error("error affected rows")
 		return err
 	}
 

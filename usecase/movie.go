@@ -28,6 +28,7 @@ func (u *MovieUsecase) GetAllMovies(
 	ctx context.Context,
 	queryOptions map[sortOptions.SortOptionName]sortOptions.SortOptionValue,
 ) ([]model.APIMovie, error) {
+	
 	dbMovies, err := u.movieStorage.GetMovies(ctx, queryOptions)
 	if err != nil {
 		return nil, err

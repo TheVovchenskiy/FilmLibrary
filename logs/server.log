@@ -1,0 +1,3 @@
+{"URL":"/movies/search","execution_time":"5.0313ms","level":"info","method":"GET","msg":"HTTP Request","request_id":"fd53c63a-0727-4df4-a824-e172ce74ada4","status":200,"time":"Mon, 18 Mar 2024 19:03:27 MSK"}
+{"URL":"/movies/search","level":"info","method":"GET","msg":"going to postgres","request_id":"2adc2302-67b6-4e54-88cf-963af6909635","search_query":"a","time":"Mon, 18 Mar 2024 19:30:19 MSK"}
+{"URL":"/movies/search","execution_time":"5.5975ms","level":"info","method":"GET","msg":"HTTP Request","request_id":"2adc2302-67b6-4e54-88cf-963af6909635","status":200,"time":"Mon, 18 Mar 2024 19:30:19 MSK"}

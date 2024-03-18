@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"context"
 	"encoding/json"
 	"filmLibrary/model"
 	"filmLibrary/pkg/responseTemplate"
@@ -9,12 +8,14 @@ import (
 	"filmLibrary/pkg/searchOptions"
 	"filmLibrary/pkg/serverErrors"
 	"filmLibrary/pkg/sortOptions"
+	"filmLibrary/pkg/utils"
 	"filmLibrary/usecase"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 type MovieHandler struct {
@@ -47,15 +48,26 @@ func sanitizeMovies(movies ...model.APIMovie) (sanitizedMovies []model.APIMovie)
 }
 
 func (movieHandler *MovieHandler) HandleMovies(w http.ResponseWriter, r *http.Request) {
+	contextLogger := utils.GetContextLogger(r.Context())
+
 	switch r.Method {
 	case http.MethodGet:
 		queryOptions, err := sortOptions.GetSortOptions(r.URL.Query())
 		if err != nil {
+			contextLogger.WithFields(logrus.Fields{
+				"err_msg": err,
+			}).
+				Error("error on sorting options")
 			responseTemplate.ServeJsonError(w, err)
 			return
 		}
 
-		movies, err := movieHandler.movieUsecase.GetAllMovies(context.Background(), queryOptions)
+		contextLogger.WithFields(logrus.Fields{
+			"query_options": queryOptions,
+		}).
+			Info("got request with query options")
+
+		movies, err := movieHandler.movieUsecase.GetAllMovies(r.Context(), queryOptions)
 		if err != nil {
 			responseTemplate.ServeJsonError(w, err)
 			return
@@ -68,11 +80,15 @@ func (movieHandler *MovieHandler) HandleMovies(w http.ResponseWriter, r *http.Re
 		apiMovie := model.APIMovie{}
 		err := json.NewDecoder(r.Body).Decode(&apiMovie)
 		if err != nil {
+			contextLogger.WithFields(logrus.Fields{
+				"err_msg": err,
+			}).
+				Info("json decoder error")
 			responseTemplate.ServeJsonError(w, serverErrors.ErrInvalidRequest)
 			return
 		}
 
-		newMovieId, err := movieHandler.movieUsecase.AddMovie(context.Background(), apiMovie)
+		newMovieId, err := movieHandler.movieUsecase.AddMovie(r.Context(), apiMovie)
 		if err != nil {
 			responseTemplate.ServeJsonError(w, err)
 			return
@@ -87,10 +103,17 @@ func (movieHandler *MovieHandler) HandleMovies(w http.ResponseWriter, r *http.Re
 }
 
 func (movieHandler *MovieHandler) HandleMovie(w http.ResponseWriter, r *http.Request) {
+	contextLogger := utils.GetContextLogger(r.Context())
+
 	vars := mux.Vars(r)
 	movieId, err := strconv.Atoi(vars["id"])
 
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg":  err,
+			"movie_id": movieId,
+		}).
+			Info("invalid movie_id")
 		responseTemplate.ServeJsonError(w, serverErrors.ErrInvalidRequest)
 		return
 	}
@@ -98,11 +121,15 @@ func (movieHandler *MovieHandler) HandleMovie(w http.ResponseWriter, r *http.Req
 	case http.MethodPut:
 		updateData := make(map[string]interface{})
 		if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
+			contextLogger.WithFields(logrus.Fields{
+				"err_msg": err,
+			}).
+				Info("json decoder error")
 			responseTemplate.ServeJsonError(w, err)
 			return
 		}
 
-		err = movieHandler.movieUsecase.UpdateMovie(context.Background(), movieId, updateData)
+		err = movieHandler.movieUsecase.UpdateMovie(r.Context(), movieId, updateData)
 		if err != nil {
 			responseTemplate.ServeJsonError(w, err)
 			return
@@ -111,7 +138,7 @@ func (movieHandler *MovieHandler) HandleMovie(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusOK)
 
 	case http.MethodDelete:
-		err = movieHandler.movieUsecase.DeleteMovie(context.Background(), movieId)
+		err = movieHandler.movieUsecase.DeleteMovie(r.Context(), movieId)
 		if err != nil {
 			responseTemplate.ServeJsonError(w, err)
 			return
@@ -124,13 +151,20 @@ func (movieHandler *MovieHandler) HandleMovie(w http.ResponseWriter, r *http.Req
 }
 
 func (handler *MovieHandler) HandleSearchMovies(w http.ResponseWriter, r *http.Request) {
+	contextLogger := utils.GetContextLogger(r.Context())
+
 	searchQuery, err := searchOptions.GetSearchQuery(r.URL.Query())
 	if err != nil {
+		contextLogger.WithFields(logrus.Fields{
+			"err_msg":      err,
+			"search_query": searchQuery,
+		}).
+			Info("seqrch query error")
 		responseTemplate.ServeJsonError(w, err)
 		return
 	}
 
-	movies, err := handler.movieUsecase.SearchMovies(context.Background(), searchQuery)
+	movies, err := handler.movieUsecase.SearchMovies(r.Context(), searchQuery)
 	if err != nil {
 		responseTemplate.ServeJsonError(w, err)
 		return
