@@ -3,6 +3,7 @@ package app
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/jackc/pgx/stdlib"
 	"os"
 )
 
