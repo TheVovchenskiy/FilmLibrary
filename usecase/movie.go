@@ -52,3 +52,11 @@ func (u *MovieUsecase) UpdateMovie(ctx context.Context, movieId int, updateData 
 func (u *MovieUsecase) DeleteMovie(ctx context.Context, movieId int) error {
 	return u.movieStorage.DeleteMovie(ctx, movieId)
 }
+
+func (u *MovieUsecase) SearchMovies(ctx context.Context, searchQuery string) ([]model.APIMovie, error) {
+	movies, err := u.movieStorage.SearchMovie(ctx, searchQuery)
+	if err != nil {
+		return nil, err
+	}
+	return u.dbMoviesToAPI(movies), nil
+}

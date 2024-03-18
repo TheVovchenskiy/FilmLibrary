@@ -19,11 +19,13 @@ func Run() (err error) {
 	defer db.Close()
 
 	movieStorage := repository.NewMoviesPg(db)
+	starStorage := repository.NewStarsPg(db)
 
 	// rootRouter := http.NewServeMux()
 	rootRouter := mux.NewRouter()
 
 	MountMovieRouter(rootRouter, movieStorage)
+	MountStarRouter(rootRouter, starStorage)
 
 	fmt.Printf("\tstarting server at %d\n", configs.PORT)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", configs.PORT), rootRouter)

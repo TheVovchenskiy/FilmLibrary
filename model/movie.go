@@ -8,7 +8,7 @@ type APIMovie struct {
 	Descriprion string    `json:"description,omitempty"`
 	ReleaseDate string    `json:"releaseDate,omitempty"`
 	Rating      float32   `json:"rating,omitempty"`
-	Stars       []APIStar `json:"stars,omitempty"`
+	// Stars       []APIStar `json:"stars,omitempty"`
 }
 
 func (m *APIMovie) ToDB() *DBMovie {

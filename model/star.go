@@ -12,7 +12,8 @@ type APIStar struct {
 	Name     string     `json:"name,omitempty"`
 	Gender   Gender     `json:"gender,omitempty"`
 	Birthday string     `json:"birthday,omitempty"`
-	Movies   []APIMovie `json:"movies,omitempty"`
+	Movies   []string `json:"movies,omitempty"`
+	// Movies   []APIMovie `json:"movies,omitempty"`
 }
 
 func (m *APIStar) ToDB() *DBStar {

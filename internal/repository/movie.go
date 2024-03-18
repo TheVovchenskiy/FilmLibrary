@@ -182,3 +182,48 @@ func (repo *MoviesPg) DeleteMovie(ctx context.Context, movieId int) error {
 	return nil
 }
 
+func (repo *MoviesPg) SearchMovie(ctx context.Context, searchQuery string) ([]model.DBMovie, error) {
+	likeSearchQuery := "%" + searchQuery + "%"
+	query := `SELECT
+				m.id,
+				m."name",
+				m.description,
+				m.release_date,
+				m.rating
+			FROM
+				public.movie m
+			LEFT JOIN public.movie_star_assign msa
+			ON
+				m.id = msa.movie_id
+			LEFT JOIN public.star s
+			ON
+				s.id = msa.star_id
+			WHERE
+				lower(m."name") LIKE lower($1)
+				OR lower(s."name") LIKE lower($2)`
+
+	rows, err := repo.db.Query(query, likeSearchQuery, likeSearchQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	moviesToReturn := []model.DBMovie{}
+
+	for rows.Next() {
+		movie := model.DBMovie{}
+		err := rows.Scan(
+			&movie.Id,
+			&movie.Name,
+			&movie.Descriprion,
+			&movie.ReleaseDate,
+			&movie.Rating,
+		)
+		if err != nil {
+			return nil, err
+		}
+		moviesToReturn = append(moviesToReturn, movie)
+	}
+
+	return moviesToReturn, nil
+}

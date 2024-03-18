@@ -6,6 +6,7 @@ import (
 	"filmLibrary/model"
 	"filmLibrary/pkg/responseTemplate"
 	"filmLibrary/pkg/sanitizer"
+	"filmLibrary/pkg/searchOptions"
 	"filmLibrary/pkg/serverErrors"
 	"filmLibrary/pkg/sortOptions"
 	"filmLibrary/usecase"
@@ -26,14 +27,20 @@ func NewMovieHandler(movieStorage usecase.MovieStorage) *MovieHandler {
 	}
 }
 
-func (movieHandler *MovieHandler) sanitizeMovies(movies ...model.APIMovie) (sanitizedMovies []model.APIMovie) {
+func sanitizeMovie(movie model.APIMovie) model.APIMovie {
+	movie.Name = sanitizer.XSS.Sanitize(movie.Name)
+	movie.Descriprion = sanitizer.XSS.Sanitize(movie.Descriprion)
+	movie.ReleaseDate = sanitizer.XSS.Sanitize(movie.ReleaseDate)
+
+	// movie.Stars = sanitizeStars(movie.Stars...)
+
+	return movie
+}
+
+func sanitizeMovies(movies ...model.APIMovie) (sanitizedMovies []model.APIMovie) {
 	sanitizedMovies = make([]model.APIMovie, 0, len(movies))
 	for _, movie := range movies {
-		movie.Name = sanitizer.XSS.Sanitize(movie.Name)
-		movie.Descriprion = sanitizer.XSS.Sanitize(movie.Descriprion)
-		movie.ReleaseDate = sanitizer.XSS.Sanitize(movie.ReleaseDate)
-
-		sanitizedMovies = append(sanitizedMovies, movie)
+		sanitizedMovies = append(sanitizedMovies, sanitizeMovie(movie))
 	}
 
 	return
@@ -53,7 +60,7 @@ func (movieHandler *MovieHandler) HandleMovies(w http.ResponseWriter, r *http.Re
 			responseTemplate.ServeJsonError(w, err)
 			return
 		}
-		sanitizedMovies := movieHandler.sanitizeMovies(movies...)
+		sanitizedMovies := sanitizeMovies(movies...)
 		responseTemplate.MarshalAndSend(w, sanitizedMovies)
 	case http.MethodPost:
 		defer r.Body.Close()
@@ -114,4 +121,20 @@ func (movieHandler *MovieHandler) HandleMovie(w http.ResponseWriter, r *http.Req
 	default:
 		responseTemplate.ServeJsonError(w, serverErrors.ErrMethodNotAllowed)
 	}
+}
+
+func (handler *MovieHandler) HandleSearchMovies(w http.ResponseWriter, r *http.Request) {
+	searchQuery, err := searchOptions.GetSearchQuery(r.URL.Query())
+	if err != nil {
+		responseTemplate.ServeJsonError(w, err)
+		return
+	}
+
+	movies, err := handler.movieUsecase.SearchMovies(context.Background(), searchQuery)
+	if err != nil {
+		responseTemplate.ServeJsonError(w, err)
+		return
+	}
+	sanitizedMovies := sanitizeMovies(movies...)
+	responseTemplate.MarshalAndSend(w, sanitizedMovies)
 }

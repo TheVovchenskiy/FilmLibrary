@@ -1,7 +1,16 @@
 package routers
 
-// import "net/http"
+import (
+	"filmLibrary/internal/rest"
+	"filmLibrary/usecase"
+	"net/http"
 
-// func MountActorRouter(router http.ServeMux) error {
-	
-// }
+	"github.com/gorilla/mux"
+)
+
+func MountStarRouter(router *mux.Router, starStorage usecase.StarStorage) {
+	handler := rest.NewStarHandler(starStorage)
+
+	router.Handle("/stars", http.HandlerFunc(handler.HandleStars)).Methods("GET", "POST")
+	router.Handle("/stars/{id}", http.HandlerFunc(handler.HandleStar)).Methods("PUT", "DELETE")
+}
