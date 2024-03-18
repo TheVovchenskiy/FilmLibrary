@@ -20,7 +20,3 @@ type StarStorage interface {
 	UpdateStar(ctx context.Context, starId int, updateData map[string]interface{}) error
 	DeleteStar(ctx context.Context, starId int) error
 }
-
-type AuthStorage interface {
-	
-}

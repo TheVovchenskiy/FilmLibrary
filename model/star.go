@@ -8,10 +8,10 @@ const (
 )
 
 type APIStar struct {
-	Id       int        `json:"id,omitempty"`
-	Name     string     `json:"name,omitempty"`
-	Gender   Gender     `json:"gender,omitempty"`
-	Birthday string     `json:"birthday,omitempty"`
+	Id       int      `json:"id,omitempty"`
+	Name     string   `json:"name,omitempty"`
+	Gender   Gender   `json:"gender,omitempty"`
+	Birthday string   `json:"birthday,omitempty"`
 	Movies   []string `json:"movies,omitempty"`
 	// Movies   []APIMovie `json:"movies,omitempty"`
 }
@@ -32,7 +32,7 @@ type DBStar struct {
 	Birthday string
 }
 
-func (m *DBStar) ToDB() *APIStar {
+func (m *DBStar) ToAPI() *APIStar {
 	return &APIStar{
 		Id:       m.Id,
 		Name:     m.Name,

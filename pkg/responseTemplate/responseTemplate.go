@@ -7,7 +7,7 @@ import (
 )
 
 type ErrToSend struct {
-	Message string
+	Message string `json:"message"`
 }
 
 func MarshalAndSend(w http.ResponseWriter, data any) {
