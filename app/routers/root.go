@@ -38,6 +38,7 @@ func Run() (err error) {
 	loggedRouter := middleware.AccessLogMiddleware(rootRouter)
 	requestIdRouter := middleware.RequestID(loggedRouter)
 	recoverRouter := middleware.PanicRecoverMiddleware(logging.Logger, requestIdRouter)
+	// authRouter := middleware.RoleCheckMiddleware(db)(recoverRouter)
 
 	fmt.Printf("\tstarting server at %d\n", configs.PORT)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", configs.PORT), recoverRouter)
