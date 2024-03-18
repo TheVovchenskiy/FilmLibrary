@@ -1,6 +1,7 @@
 package serverErrors
 
 import (
+	"filmLibrary/internal/repository"
 	"filmLibrary/pkg/sortOptions"
 	"net/http"
 )
@@ -8,6 +9,11 @@ import (
 var HTTPErrors = map[error]int{
 	ErrMethodNotAllowed:              http.StatusMethodNotAllowed,
 	sortOptions.ErrInvalidQueryParam: http.StatusBadRequest,
+	ErrInvalidRequest:                http.StatusBadRequest,
+	repository.ErrNotInserted:        http.StatusInternalServerError,
+	repository.ErrNoRowsDeleted:      http.StatusInternalServerError,
+	repository.ErrNoRowsUpdated:      http.StatusInternalServerError,
+	repository.ErrInvalidFieldName:   http.StatusBadRequest,
 }
 
 func MapHTTPError(err error) (msg string, status int) {

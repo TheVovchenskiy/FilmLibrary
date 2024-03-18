@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -19,7 +20,8 @@ func Run() (err error) {
 
 	movieStorage := repository.NewMoviesPg(db)
 
-	rootRouter := http.NewServeMux()
+	// rootRouter := http.NewServeMux()
+	rootRouter := mux.NewRouter()
 
 	MountMovieRouter(rootRouter, movieStorage)
 

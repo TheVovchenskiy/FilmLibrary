@@ -2,13 +2,18 @@ package rest
 
 import (
 	"context"
+	"encoding/json"
 	"filmLibrary/model"
 	"filmLibrary/pkg/responseTemplate"
 	"filmLibrary/pkg/sanitizer"
 	"filmLibrary/pkg/serverErrors"
 	"filmLibrary/pkg/sortOptions"
 	"filmLibrary/usecase"
+	"fmt"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type MovieHandler struct {
@@ -34,7 +39,7 @@ func (movieHandler *MovieHandler) sanitizeMovies(movies ...model.APIMovie) (sani
 	return
 }
 
-func (movieHandler *MovieHandler) HandleGetMovies(w http.ResponseWriter, r *http.Request) {
+func (movieHandler *MovieHandler) HandleMovies(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		queryOptions, err := sortOptions.GetSortOptions(r.URL.Query())
@@ -50,6 +55,62 @@ func (movieHandler *MovieHandler) HandleGetMovies(w http.ResponseWriter, r *http
 		}
 		sanitizedMovies := movieHandler.sanitizeMovies(movies...)
 		responseTemplate.MarshalAndSend(w, sanitizedMovies)
+	case http.MethodPost:
+		defer r.Body.Close()
+
+		apiMovie := model.APIMovie{}
+		err := json.NewDecoder(r.Body).Decode(&apiMovie)
+		if err != nil {
+			responseTemplate.ServeJsonError(w, serverErrors.ErrInvalidRequest)
+			return
+		}
+
+		newMovieId, err := movieHandler.movieUsecase.AddMovie(context.Background(), apiMovie)
+		if err != nil {
+			responseTemplate.ServeJsonError(w, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(fmt.Sprintf(`{"id":%d}`, newMovieId)))
+	default:
+		responseTemplate.ServeJsonError(w, serverErrors.ErrMethodNotAllowed)
+	}
+}
+
+func (movieHandler *MovieHandler) HandleMovie(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	movieId, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		responseTemplate.ServeJsonError(w, serverErrors.ErrInvalidRequest)
+		return
+	}
+	switch r.Method {
+	case http.MethodPut:
+		updateData := make(map[string]interface{})
+		if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
+			responseTemplate.ServeJsonError(w, err)
+			return
+		}
+
+		err = movieHandler.movieUsecase.UpdateMovie(context.Background(), movieId, updateData)
+		if err != nil {
+			responseTemplate.ServeJsonError(w, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+
+	case http.MethodDelete:
+		err = movieHandler.movieUsecase.DeleteMovie(context.Background(), movieId)
+		if err != nil {
+			responseTemplate.ServeJsonError(w, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	default:
 		responseTemplate.ServeJsonError(w, serverErrors.ErrMethodNotAllowed)
 	}

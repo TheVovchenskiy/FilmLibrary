@@ -35,3 +35,20 @@ func (u *MovieUsecase) GetAllMovies(
 
 	return u.dbMoviesToAPI(dbMovies), nil
 }
+
+func (u *MovieUsecase) AddMovie(ctx context.Context, apiMovie model.APIMovie) (int, error) {
+	dbMovie := apiMovie.ToDB()
+	id, err := u.movieStorage.AddMovie(ctx, *dbMovie)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (u *MovieUsecase) UpdateMovie(ctx context.Context, movieId int, updateData map[string]interface{}) error {
+	return u.movieStorage.UpdateMovie(ctx, movieId, updateData)
+}
+
+func (u *MovieUsecase) DeleteMovie(ctx context.Context, movieId int) error {
+	return u.movieStorage.DeleteMovie(ctx, movieId)
+}

@@ -3,6 +3,7 @@ module filmLibrary
 go 1.21.0
 
 require (
+	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/joho/godotenv v1.5.1
 	github.com/microcosm-cc/bluemonday v1.0.26

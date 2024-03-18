@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type APIMovie struct {
 	Id          int       `json:"id,omitempty"`
 	Name        string    `json:"name,omitempty"`
@@ -10,13 +12,20 @@ type APIMovie struct {
 }
 
 func (m *APIMovie) ToDB() *DBMovie {
-	return &DBMovie{
+	res := &DBMovie{
 		Id:          m.Id,
 		Name:        m.Name,
 		Descriprion: m.Descriprion,
-		ReleaseDate: m.ReleaseDate,
 		Rating:      m.Rating,
 	}
+
+	releaseDate, err := time.Parse(time.RFC3339, m.ReleaseDate)
+	if err != nil {
+		releaseDateStr := releaseDate.Format(time.DateOnly)
+		res.ReleaseDate = releaseDateStr
+	}
+
+	return res
 }
 
 type DBMovie struct {

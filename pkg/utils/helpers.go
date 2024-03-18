@@ -1,6 +1,6 @@
 package utils
 
-func In(elem any, elemets ...any) bool {
+func In[T comparable](elem T, elemets []T) bool {
 	for _, element := range elemets {
 		if element == elem {
 			return true
