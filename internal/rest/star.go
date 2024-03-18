@@ -7,12 +7,14 @@ import (
 	"filmLibrary/pkg/responseTemplate"
 	"filmLibrary/pkg/sanitizer"
 	"filmLibrary/pkg/serverErrors"
+	"filmLibrary/pkg/utils"
 	"filmLibrary/usecase"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 type StarHandler struct {
@@ -49,9 +51,11 @@ func sanitizeStars(stars ...model.APIStar) (sanitizedMovies []model.APIStar) {
 }
 
 func (handler *StarHandler) HandleStars(w http.ResponseWriter, r *http.Request) {
+	contextLogger := utils.GetContextLogger(r.Context())
+
 	switch r.Method {
 	case http.MethodGet:
-		stars, err := handler.starUsecase.GetAllStars(context.Background())
+		stars, err := handler.starUsecase.GetAllStars(r.Context())
 		if err != nil {
 			responseTemplate.ServeJsonError(w, err)
 			return
@@ -65,11 +69,15 @@ func (handler *StarHandler) HandleStars(w http.ResponseWriter, r *http.Request) 
 		apiStar := model.APIStar{}
 		err := json.NewDecoder(r.Body).Decode(&apiStar)
 		if err != nil {
+			contextLogger.WithFields(logrus.Fields{
+				"err_msg": err,
+			}).
+				Info("json decoder error")
 			responseTemplate.ServeJsonError(w, serverErrors.ErrInvalidRequest)
 			return
 		}
 
-		newMovieId, err := handler.starUsecase.AddStar(context.Background(), apiStar)
+		newMovieId, err := handler.starUsecase.AddStar(r.Context(), apiStar)
 		if err != nil {
 			responseTemplate.ServeJsonError(w, err)
 			return
@@ -82,6 +90,7 @@ func (handler *StarHandler) HandleStars(w http.ResponseWriter, r *http.Request) 
 }
 
 func (handler *StarHandler) HandleStar(w http.ResponseWriter, r *http.Request) {
+	contextLogger := utils.GetContextLogger(r.Context())
 	vars := mux.Vars(r)
 	starId, err := strconv.Atoi(vars["id"])
 
@@ -94,11 +103,15 @@ func (handler *StarHandler) HandleStar(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		updateData := make(map[string]interface{})
 		if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
+			contextLogger.WithFields(logrus.Fields{
+				"err_msg": err,
+			}).
+				Info("json decoder error")
 			responseTemplate.ServeJsonError(w, err)
 			return
 		}
 
-		err = handler.starUsecase.UpdateStar(context.Background(), starId, updateData)
+		err = handler.starUsecase.UpdateStar(r.Context(), starId, updateData)
 		if err != nil {
 			responseTemplate.ServeJsonError(w, err)
 			return
@@ -107,7 +120,7 @@ func (handler *StarHandler) HandleStar(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 
 	case http.MethodDelete:
-		err = handler.starUsecase.DeleteStar(context.Background(), starId)
+		err = handler.starUsecase.DeleteStar(r.Context(), starId)
 		if err != nil {
 			responseTemplate.ServeJsonError(w, err)
 			return
